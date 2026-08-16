@@ -1,0 +1,23 @@
+name: keepalive
+
+# Supabase 無料枠は7日間無操作で自動停止する。
+# デモは散発利用のため、1日1回 health_check RPC を叩いて停止を防ぐ。
+# （※これは停止回避のための暫定策。精密な稼働監視が要るなら UptimeRobot を別途設定する。）
+
+on:
+  schedule:
+    - cron: '17 3 * * *'   # 毎日 03:17 UTC（正時の混雑を避ける）
+  workflow_dispatch:        # 手動実行も可
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase health_check
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "${{ secrets.HEALTHCHECK_URL }}")
+          echo "health_check -> HTTP $code"
+          test "$code" = "200"
